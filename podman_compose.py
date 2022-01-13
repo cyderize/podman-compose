@@ -1554,6 +1554,12 @@ def compose_ps(compose, args):
     else:
         compose.podman.run([], "ps", ["-a", "--filter", f"label=io.podman.compose.project={proj_name}"])
 
+@cmd_run(podman_compose, 'port', 'print public port for a port binding')
+def compose_ps(compose, args):
+    container_names=compose.container_names_by_service[args.service]
+    container_name=container_names[args.index - 1]
+    compose.podman.run([], "port", [container_name, f"{args.private_port}/{args.protocol}"])
+
 @cmd_run(podman_compose, 'run', 'create a container similar to a service to run a one-off command')
 def compose_run(compose, args):
     create_pods(compose, args)
@@ -1839,6 +1845,17 @@ def compose_push_parse(parser):
 def compose_ps_parse(parser):
     parser.add_argument("-q", "--quiet",
         help="Only display container IDs", action='store_true')
+
+@cmd_parse(podman_compose, 'port')
+def compose_port_parse(parser):
+    parser.add_argument("--protocol", choices=['tcp', 'udp'], default='tcp',
+        help="Index of the container if there are multiple instances of a service")
+    parser.add_argument("--index", type=int, default=1,
+        help="Index of the container if there are multiple instances of a service")
+    parser.add_argument('service', metavar='service', nargs=None,
+        help='service name')
+    parser.add_argument('private_port', metavar='private_port', nargs=None,
+        help='private port')
 
 @cmd_parse(podman_compose, ['build', 'up'])
 def compose_build_parse(parser):
